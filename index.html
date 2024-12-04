@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Color Picker</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(
+                180deg,
+                #F4E7F8 0%,
+                #F2DDDC 20%,
+                #F6BCBA 40%,
+                #E3AADD 60%,
+                #C8A8E9 80%,
+                #C3C7F4 100%
+            );
+            padding: 20px;
+            background-attachment: fixed;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            backdrop-filter: blur(5px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: #666;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        #imageInput {
+            display: none;
+        }
+
+        #imagePreview {
+            max-width: 100%;
+            margin-top: 20px;
+            border-radius: 8px;
+            cursor: crosshair;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        #colorInfo {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            backdrop-filter: blur(5px);
+        }
+
+        .color-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .color-box {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            width: 100%;
+        }
+
+        .button:hover {
+            background: #0056b3;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Image Color Picker</h1>
+        <div class="upload-area" id="uploadArea">
+            <p>Click to upload an image or drag and drop here</p>
+            <input type="file" id="imageInput" accept="image/*">
+        </div>
+        <canvas id="canvas" style="display: none;"></canvas>
+        <img id="imagePreview" style="display: none;">
+        <div id="colorInfo">
+            <div class="color-display">
+                <div class="color-box" id="colorBox"></div>
+                <div>
+                    <div>HEX Code: <span id="hexColor"></span></div>
+                    <div>RGB Code: <span id="rgbColor"></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const imageInput = document.getElementById('imageInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const colorInfo = document.getElementById('colorInfo');
+        const colorBox = document.getElementById('colorBox');
+        const hexColor = document.getElementById('hexColor');
+        const rgbColor = document.getElementById('rgbColor');
+
+        uploadArea.addEventListener('click', () => imageInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#007bff';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#ccc';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ccc';
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleImage(file);
+            }
+        });
+
+        imageInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                handleImage(e.target.files[0]);
+            }
+        });
+
+        function handleImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                    uploadArea.style.display = 'none';
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        imagePreview.addEventListener('click', (e) => {
+            const rect = imagePreview.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const pixel = ctx.getImageData(x * scaleX, y * scaleY, 1, 1).data;
+            
+            const rgb = `rgb(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`;
+            const hex = '#' + pixel[0].toString(16).padStart(2, '0') + 
+                             pixel[1].toString(16).padStart(2, '0') + 
+                             pixel[2].toString(16).padStart(2, '0');
+
+            colorBox.style.backgroundColor = rgb;
+            hexColor.textContent = hex.toUpperCase();
+            rgbColor.textContent = rgb;
+            colorInfo.style.display = 'block';
+        });
+    </script>
+</body>
+</html>
